@@ -52,6 +52,13 @@ app.post("/faucet/:address", async (req, res) => {
   }
 });
 
+app.listen(PORT,()=>{
+    console.log("Listening in port: ", PORT)
+})
+
+app.get("/balance", async(req, res)=>{
+    getBalance()
+})
 
 app.get("/getBalance/:address", async(req, res)=>{
    try{
