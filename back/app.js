@@ -56,8 +56,26 @@ app.listen(PORT,()=>{
     console.log("Listening in port: ", PORT)
 })
 
-app.get("/balance", async(req, res)=>{
-    getBalance()
+app.post("/faucet/:address", async(req, res) => {
+   try {
+     const accountToSend = req.params.address
+     const accountFrom = web3.eth.account.decrypt(json, "user0")
+
+     const tx = {
+	chainId: 8995,
+        from: accountFrom.address,
+        to: accountToSend.address,
+        gas: 30000,
+        value: web3.utils.toWei("0.1", "ether")
+     }
+
+     const txSigned = await accountFrom.signTransaction(tx)
+     const hash = await web3.eth.signTransaction(txSigned.rawTransaction)
+     res.send(hash)
+
+  } catch(err){
+    res.send(err)
+  }
 })
 
 app.get("/getBalance/:address", async(req, res)=>{
