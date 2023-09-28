@@ -14,13 +14,13 @@ app.listen(PORT,()=>{
 
 app.post("/faucet/:address", async(req, res) => {
    try {
-     const accountToSend = req.params.address
-     const accountFrom = web3.eth.account.decrypt(json, "user0")
+     const accountToSend = web.utils.toHex(req.params.address)
+     const accountFrom = web3.eth.accounts.decrypt(json, "user0")
 
      const tx = {
 	chainId: 8995,
         from: accountFrom.address,
-        to: accountToSend.address,
+        to: accountToSend,
         gas: 30000,
         value: web3.utils.toWei("0.1", "ether")
      }
@@ -38,7 +38,7 @@ app.get("/getBalance/:address", async(req, res)=>{
    try{
     const account = req.params.address
     const balance = await web3.eth.getBalance(account)
-    res.send(balance)
+    res.send(web3.utils.fromWei(balance, "ether"))
   } catch(err){
     res.send(err)
   }
