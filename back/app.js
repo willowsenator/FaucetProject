@@ -61,7 +61,7 @@ app.post("/faucet/:address", async(req, res) => {
      const accountToSend = web.utils.toHex(req.params.address)
      const accountFrom = web3.eth.accounts.decrypt(json, "user0")
 
-     const tx = {
+     const rawTx = {
 	chainId: 8995,
         from: accountFrom.address,
         to: accountToSend,
@@ -69,13 +69,17 @@ app.post("/faucet/:address", async(req, res) => {
         value: web3.utils.toWei("0.1", "ether")
      }
 
-     const txSigned = await accountFrom.signTransaction(tx)
-     const hash = await web3.eth.signTransaction(txSigned.rawTransaction)
-     res.send(hash)
+     var tx = new Tx(rawTx)
+     tx.sign(rawTx)
+     var serializedTx = tx.serialize()
 
-  } catch(err){
-    res.send(err)
-  }
+     console.log("Serialized Tx: ", serializedTx)
+     const response = await web3.eth.sendSignedTransaction(serializedTx)
+     res.json({ transactionHash: response.transactionHash });
+    } catch (err) {
+      console.error('Error:', err);
+      res.status(500).json({ error: 'Transaction failed' });
+    }
 })
 
 app.get("/getBalance/:address", async(req, res)=>{
