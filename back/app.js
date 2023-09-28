@@ -58,13 +58,13 @@ app.listen(PORT,()=>{
 
 app.post("/faucet/:address", async(req, res) => {
    try {
-     const accountToSend = req.params.address
-     const accountFrom = web3.eth.account.decrypt(json, "user0")
+     const accountToSend = web.utils.toHex(req.params.address)
+     const accountFrom = web3.eth.accounts.decrypt(json, "user0")
 
      const tx = {
 	chainId: 8995,
         from: accountFrom.address,
-        to: accountToSend.address,
+        to: accountToSend,
         gas: 30000,
         value: web3.utils.toWei("0.1", "ether")
      }
