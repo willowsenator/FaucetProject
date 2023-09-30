@@ -52,44 +52,7 @@ app.post("/faucet/:address", async (req, res) => {
   }
 });
 
-app.listen(PORT,()=>{
-    console.log("Listening in port: ", PORT)
-})
 
-app.post("/faucet/:address", async(req, res) => {
-   try {
-     const accountToSend = req.params.address
-     const accountFrom = await web3.eth.accounts.decrypt(json, "user0")
-     const chainId = web3.utils.toHex("8995")
-     const gas = web3.utils.toHex("3000")
-     const value = web3.utils.toHex(web3.utils.toWei("0.1", "ether"))
-     const gasLimit = web3.utils.toHex("21000")
-     const gasPrice = web3.utils.toHex(web3.utils.toWei("50","gwei"))
-
-     const rawTx = {
-	chainId: chainId,
-        from: accountFrom.address,
-        to: accountToSend,
-        gas: gas,
-        gasLimit: gasLimit,
-        gasPrice: gasPrice,
-        value: value
-     }
-     console.log(rawTx)
-     var tx = new Tx(rawTx)
-     const privatekeyWithout0x = remove0xFromString(accountFrom.privateKey)
-     console.log(privatekeyWithout0x)
-     await tx.sign(Buffer.from(privatekeyWithout0x, "hex"))
-     const serializedTx = tx.serialize()
-
-     console.log("Serialized Tx: ", serializedTx)
-     const response = await web3.eth.sendSignedTransaction(serializedTx)
-     res.json({ transactionHash: response.transactionHash });
-    } catch (err) {
-      console.error('Error:', err);
-      res.status(500).json({ error: 'Transaction failed' });
-    }
-})
 
 app.get("/getBalance/:address", async(req, res)=>{
    try{
