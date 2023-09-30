@@ -1,64 +1,76 @@
-const {Web3} = require("web3")
-const web3 = new Web3("http://127.0.0.1:8545")
-const express = require("express")
-const fs = require("fs")
-const Tx = require("ethereumjs-tx").Transaction
+const {Web3} = require("web3");
+const web3 = new Web3("http://127.0.0.1:8545");
+const express = require("express");
+const fs = require("fs");
 
-const app = express()
-const PORT = 6700
-const KEY_FILE = "../custom_blockchain/rpc/keys/chain_authority/UTC--2023-08-29T20-43-20Z--73be6d88-5af0-9b79-ba85-b4bc69253fed"
+const app = express();
+const PORT = 6700;
+const KEY_FILE = "../custom_blockchain/data/keystore/UTC--2023-09-30T10-45-43.872863079Z--b854a30b9651a9d50a847b9c2cf43e975719cd22";
 
-const json = JSON.parse(fs.readFileSync(KEY_FILE))
+const json = JSON.parse(fs.readFileSync(KEY_FILE));
 
 app.listen(PORT,()=>{
-    console.log("Listening in port: ", PORT)
-})
+    console.log("Listening in port: ", PORT);
+});
 
-app.post("/faucet/:address", async(req, res) => {
-   try {
-     const accountToSend = req.params.address
-     const accountFrom = await web3.eth.accounts.decrypt(json, "user0")
-     const chainId = web3.utils.toHex("8995")
-     const gas = web3.utils.toHex("3000")
-     const value = web3.utils.toHex(web3.utils.toWei("0.1", "ether"))
-     const gasLimit = web3.utils.toHex("21000")
-     const gasPrice = web3.utils.toHex(web3.utils.toWei("50","gwei"))
+app.post("/faucet/:address", async (req, res) => {
+  try {
+    const accountToSend = req.params.address;
+    const accountFrom = await web3.eth.accounts.decrypt(json, "node01");
+    const chainId = 9000;
+    const gasPriceInWei = web3.utils.toWei("50", "gwei");
+    const gasLimit = 60000;
+    const valueInWei = web3.utils.toWei("0.1", "ether");
+    const nonce = await getCurrentNonce(accountFrom.address)
 
-     const rawTx = {
-	chainId: chainId,
-        from: accountFrom.address,
-        to: accountToSend,
-        gas: gas,
-        gasLimit: gasLimit,
-        gasPrice: gasPrice,
-        value: value
-     }
-     console.log(rawTx)
-     var tx = new Tx(rawTx)
-     const privatekeyWithout0x = remove0xFromString(accountFrom.privateKey)
-     console.log(privatekeyWithout0x)
-     await tx.sign(Buffer.from(privatekeyWithout0x, "hex"))
-     const serializedTx = tx.serialize()
+    const tx = {
+      chainId: chainId,
+      from: accountFrom.address,
+      to: accountToSend,
+      gas: gasLimit,
+      gasPrice: gasPriceInWei,
+      value: valueInWei,
+      nonce: nonce
+    };
 
-     console.log("Serialized Tx: ", serializedTx)
-     const response = await web3.eth.sendSignedTransaction(serializedTx)
-     res.json({ transactionHash: response.transactionHash });
-    } catch (err) {
-      console.error('Error:', err);
-      res.status(500).json({ error: 'Transaction failed' });
-    }
-})
+    const signedTx = await accountFrom.signTransaction(tx);
+    await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
+  .on('transactionHash', (hash) => {
+    console.log(`Transaction hash: ${hash}`);
+  })
+  .on('receipt', (receipt) => {
+    console.log(`Transaction receipt:`, receipt);
+    res.status(200).send({hash: receipt.transactionHash});
+  })
+  .on('error', (error) => {
+    console.error('Error sending transaction:', error);
+    res.status(500).send({ error: 'Transaction failed' });
+  });
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).send({ error: 'Transaction failed' });
+  }
+});
+
 
 app.get("/getBalance/:address", async(req, res)=>{
    try{
-    const account = req.params.address
-    const balance = await web3.eth.getBalance(account)
-    res.send(web3.utils.fromWei(balance, "ether"))
+    const account = req.params.address;
+    const balance = await web3.eth.getBalance(account);
+    res.send({balance: web3.utils.fromWei(balance, "ether")});
   } catch(err){
-    res.send(err)
+    res.status(500).send({error: 'Get Balance failed'});
   }
-})
+});
 
-function remove0xFromString(stringToModify){
-	return stringToModify.startsWith('0x') ? stringToModify.substring(2) : stringToModify
-}
+const getCurrentNonce = async (senderAddress) => {
+  return await web3.eth.getTransactionCount(senderAddress, 'latest', (error, nonce) => {
+      if (!error) {
+        console.log('Current Nonce:', nonce);
+        return nonce.toString();
+      } else {
+        console.error('Error:', error);
+        return error.toString();
+      }
+    });
+};
