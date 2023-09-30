@@ -16,20 +16,29 @@ app.listen(PORT,()=>{
 
 app.post("/faucet/:address", async(req, res) => {
    try {
-     const accountToSend = web.utils.toHex(req.params.address)
-     const accountFrom = web3.eth.accounts.decrypt(json, "user0")
+     const accountToSend = req.params.address
+     const accountFrom = await web3.eth.accounts.decrypt(json, "user0")
+     const chainId = web3.utils.toHex("8995")
+     const gas = web3.utils.toHex("3000")
+     const value = web3.utils.toHex(web3.utils.toWei("0.1", "ether"))
+     const gasLimit = web3.utils.toHex("21000")
+     const gasPrice = web3.utils.toHex(web3.utils.toWei("50","gwei"))
 
      const rawTx = {
-	chainId: 8995,
+	chainId: chainId,
         from: accountFrom.address,
         to: accountToSend,
-        gas: 30000,
-        value: web3.utils.toWei("0.1", "ether")
+        gas: gas,
+        gasLimit: gasLimit,
+        gasPrice: gasPrice,
+        value: value
      }
-
+     console.log(rawTx)
      var tx = new Tx(rawTx)
-     tx.sign(rawTx)
-     var serializedTx = tx.serialize()
+     const privatekeyWithout0x = remove0xFromString(accountFrom.privateKey)
+     console.log(privatekeyWithout0x)
+     await tx.sign(Buffer.from(privatekeyWithout0x, "hex"))
+     const serializedTx = tx.serialize()
 
      console.log("Serialized Tx: ", serializedTx)
      const response = await web3.eth.sendSignedTransaction(serializedTx)
@@ -49,3 +58,7 @@ app.get("/getBalance/:address", async(req, res)=>{
     res.send(err)
   }
 })
+
+function remove0xFromString(stringToModify){
+	return stringToModify.startsWith('0x') ? stringToModify.substring(2) : stringToModify
+}
