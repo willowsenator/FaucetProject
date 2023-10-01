@@ -3,8 +3,9 @@ import {React, useState, useEffect} from 'react'
 function Wallet(){
     const [currentAccount, setCurrentAccount] = useState("0x");
     const [currentBalance, setCurrentBalance] = useState(0);
+    const [currentHash, setCurrentHash] = useState(null);
     const wallet = window.ethereum;
-    const RPC_URL = "http://127.0.0.1:8545"	
+    const RPC_URL = "http://127.0.0.1:6700"	
 
     useEffect(() => {
         connectToAccount();
@@ -20,7 +21,7 @@ function Wallet(){
                     getBalanceCurrentAccount(selectedAccount);
                 })
                 .catch((error) => {
-                    console.error('Failed to retrieve Ethereum accounts:', error);
+                    throw new Error("Failed to retrieve Ethereum accounts:" + error);
                 });
             wallet.on('accountsChanged', (accounts)=>{
                 const selectedAccount = accounts[0];
@@ -28,29 +29,48 @@ function Wallet(){
 		getBalanceCurrentAccount(selectedAccount);
             });
         } else {
-            console.error('Ethereum provider not found. Please install MetaMask or a similar wallet.');
+            throw new Error("Ethereum provider not found. Please install MetaMask or a similar wallet.");
         }
     }
 
-    function sendTokens(){
-        console.log("Claiming 0.1 tokens");
+    function claimTokens(){
+        const faucetURL = RPC_URL + "/faucet/" + currentAccount;
+	fetch(faucetURL, {method: 'POST'})
+	.then((response)=>{
+		if(!response.ok){
+		 throw new Error("Network response was not ok");	
+		}
+		return response.json();
+	}).then((data)=>{
+		const hash = data.hash;
+		setCurrentHash("Hash: " +  hash);
+	}).catch((err) => {
+		throw new Error("Error: " + err);
+	})
 	
     }
 
-    function getBalanceCurrentAccount(){
-        const getBalanceURL = RPC_URL + "/getBalance/" + currentAccount;
-	fetch(getBalanceURL).then((result)=>{
-		setCurrentBalance(result.balance);
+    function getBalanceCurrentAccount(selectedAccount){
+        const getBalanceURL = RPC_URL + "/getBalance/" + selectedAccount;
+	fetch(getBalanceURL).then((response)=>{
+                if(!response.ok){
+                 throw new Error("Network response was not ok");
+                }
+                return response.json();
+	}).then((data)=>{
+		const currentBalance = data.balance;
+		setCurrentBalance(currentBalance);
 	}).catch((err)=>{
-	   console.error("Error: ", err);	
-	})
+	   throw new Error("Error: " + err);	
+	});
     }
     
     return (
         <div>
             <p>Account: <strong>{currentAccount}</strong></p>
             <p>Balance: <strong>{currentBalance}</strong></p>
-            <button onClick={sendTokens}>Claim 0.1 tokens</button>
+            <button onClick={claimTokens}>Claim 0.1 tokens</button>
+            <p><strong>{currentHash}</strong></p>
         </div>
     );
     

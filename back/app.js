@@ -39,10 +39,10 @@ app.post("/faucet/:address", async (req, res) => {
     await web3.eth.sendSignedTransaction(signedTx.rawTransaction)
   .on('transactionHash', (hash) => {
     console.log(`Transaction hash: ${hash}`);
+    res.status(200).send({hash: hash})
   })
   .on('receipt', (receipt) => {
     console.log(`Transaction receipt:`, receipt);
-    res.status(200).send({hash: receipt.transactionHash});
   })
   .on('error', (error) => {
     console.error('Error sending transaction:', error);
