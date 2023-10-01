@@ -23,7 +23,7 @@ app.post("/faucet/:address", async (req, res) => {
     const gasPriceInWei = web3.utils.toWei("50", "gwei");
     const gasLimit = 60000;
     const valueInWei = web3.utils.toWei("0.1", "ether");
-    const nonce = await getCurrentNonce(accountFrom.address)
+    const nonce = String(parseInt(await getCurrentNonce(accountFrom.address)) + 1);
 
     const tx = {
       chainId: chainId,
