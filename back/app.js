@@ -52,13 +52,9 @@ app.post("/faucet/:address", async (req, res) => {
 
 
 app.get("/getBalance/:address", async(req, res)=>{
-   try{
     const account = req.params.address;
     const balance = await web3.eth.getBalance(account);
     res.send({balance: web3.utils.fromWei(balance, "ether")});
-  } catch(err){
-    res.status(500).send({error: 'Get Balance failed'});
-  }
 });
 
 const getCurrentNonce = async (senderAddress) => {
