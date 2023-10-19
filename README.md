@@ -4,7 +4,7 @@
 
 ***Create an account***
 
-> docker run --rm -it -v ${pwd}/data/keystore:/data ethereum/client-go:v1.11.5 account new --keystore data
+> docker run --rm -it -v $(pwd)/data/keystore:/data ethereum/client-go:v1.11.5 account new --keystore data
 
 * This will create a new account with public key and private key.
 * We have to add the public key to our genesis.json file.
