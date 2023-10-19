@@ -16,7 +16,6 @@ app.listen(PORT,()=>{
 });
 
 app.post("/faucet/:address", async (req, res) => {
-  try {
     const accountToSend = req.params.address;
     const accountFrom = await web3.eth.accounts.decrypt(json, "node01");
     const chainId = 9000;
@@ -48,10 +47,6 @@ app.post("/faucet/:address", async (req, res) => {
     console.error('Error sending transaction:', error);
     res.status(500).send({ error: 'Transaction failed' });
   });
-  } catch (err) {
-    console.error('Error:', err);
-    res.status(500).send({ error: 'Transaction failed' });
-  }
 });
 
 
